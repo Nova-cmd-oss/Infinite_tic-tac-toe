@@ -20,3 +20,8 @@ body {
   text-align: center;
   cursor: pointer;
 }
+
+/* .blocked {
+  background-color: #716d6d;
+  cursor: not-allowed;
+} */
