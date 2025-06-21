@@ -1,102 +1,81 @@
-const board = document.getElementById("board");
+const cells = document.querySelectorAll(".cell");
 const resetBtn = document.getElementById("resetBtn");
-let turn = "X";
-let moves = [];
-let gameState = Array(9).fill(""); // ["", "", "", "", "", "", "", "", ""]
+
+let currentPlayer = "X";
+let board = Array(9).fill("");
 let gameOver = false;
-// let blockedIndex = null;
+let moves = [];
 
+function handleClick(e) {
+  const index = e.target.dataset.index;
 
-const winPatterns = [
-    [0,1,2], [3,4,5], [6,7,8], // rows
-    [0,3,6], [1,4,7], [2,5,8], // cols
-    [0,4,8], [2,4,6]           // diagonals
-];
+  if (board[index] !== "" || gameOver) return;
 
+  board[index] = currentPlayer;
+  e.target.textContent = currentPlayer;
 
-// Create 9 cells
-for (let i = 0; i < 9; i++) {
-    const cell = document.createElement("div");
-    cell.classList.add("cell");
-    cell.dataset.index = i;
-    board.appendChild(cell);
-}
+  moves.push({ index: index, player: currentPlayer });
 
-// Add click logic
-document.querySelectorAll(".cell").forEach(cell => {
-  cell.addEventListener("click", () => {
-    if (gameOver) return;
-
-    const index = +cell.dataset.index;
-
-    // if (cell.innerText !== "") return;
-    if (gameState[index] !== "" /* || index === blockedIndex */) return;
-
-    // marking the place here
-    cell.innerText = turn;
-    gameState[index] = turn;
-    moves.push({ index, player: turn });
-
-    //checking for a winner before removing the oldest move
-    const winner = checkWinner();
-    if (winner) {
-        alert(`${winner} wins!`);
-        gameOver = true;
-        return;
-    }
-
-    // Remove oldest move if more than 6 moves are made
-    if (moves.length >= 6) {
-
-    //     if (blockedIndex !== null) {
-    //         document.querySelector(`.cell[data-index="${blockedIndex}"]`)?.classList.remove("blocked");
-    // }
-
-        const oldest = moves.shift();
-        const oldIndex = +oldest.index;
-        gameState[oldIndex] = ""; // Updates the internal state
-        const oldCell = document.querySelector(`.cell[data-index="${oldest.index}"]`);
-        oldCell.innerText = "";
-        // oldCell.classList.add("blocked");
-        // blockedIndex = oldIndex;
-    } else {
-        // if no move was removed we will unblock any previously blocked cell
-        // if (blockedIndex !== null) {
-            // document.querySelector(`.cell[data-index="${blockedIndex}"]`)?.classList.remove("blocked");
-            blockedIndex = null;
-        // }
-    }
-
-    // Switch turn
-    turn = turn === "X" ? "O" : "X";
-  });
-});
-
-// Function to check for a winner
-
-function checkWinner() {
-  for (const pattern of winPatterns) {
-    const [a, b, c] = pattern;
-    if (
-        gameState[a] &&
-        gameState[a] === gameState[b] &&
-        gameState[a] === gameState[c]
-    ) {
-        return gameState[a]; // X or O
-    }
-  }
-  return null;
-}
-
-// Reset button logic
-resetBtn.addEventListener("click", () => {
+  // Remove old highlight if any
   document.querySelectorAll(".cell").forEach(cell => {
-    cell.innerText = "";
-    // cell.classList.remove("blocked");
+    cell.classList.remove("next-to-vanish");
   });
-    turn = "X";
-    moves = [];
-    gameState = Array(9).fill("");
-    gameOver = false;
-    // blockedIndex = null;
+
+
+  // Remove oldest move if more than 6
+  if (moves.length > 6) {
+    const removed = moves.shift();
+    board[removed.index] = "";
+    const cell = cells[removed.index];
+    cell.textContent = "";
+    cell.classList.remove("next-to-vanish");
+  }
+
+  // Highlight oldest cell if 5 moves made
+  if (moves.length >= 5) {
+    const oldest = moves[0];
+    cells[oldest.index].classList.add("next-to-vanish");
+  }
+
+  if (checkWin()) {
+    alert(`${currentPlayer} wins!`);
+    gameOver = true;
+    return;
+  }
+
+  currentPlayer = currentPlayer === "X" ? "O" : "X";
+}
+
+function checkWin() {
+  const winPatterns = [
+    [0,1,2], [3,4,5], [6,7,8],
+    [0,3,6], [1,4,7], [2,5,8],
+    [0,4,8], [2,4,6],
+  ];
+
+  return winPatterns.some(pattern => {
+    const [a,b,c] = pattern;
+    return (
+      board[a] !== "" &&
+      board[a] === board[b] &&
+      board[b] === board[c]
+    );
+  });
+}
+
+function resetGame() {
+  board = Array(9).fill("");
+  gameOver = false;
+  moves = [];
+  currentPlayer = "X";
+  cells.forEach(cell => {
+    cell.textContent = "";
+    cell.classList.remove("next-to-vanish");
+  });
+}
+
+cells.forEach(cell => {
+  cell.addEventListener("click", handleClick);
 });
+
+resetBtn.addEventListener("click", resetGame);
